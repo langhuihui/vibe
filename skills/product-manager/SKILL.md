@@ -94,7 +94,7 @@ P0/P1/P2
 ## 提交PRD审批
 `.vibe/docs/待审批.md`:
 ```markdown
-- [ ] PRD审批: .vibe/docs/prd/{功能}.md @产品总监
+- [ ] PRD审批: .vibe/docs/prd/{功能}.md
 ```
 
 ## 反馈验收问题
