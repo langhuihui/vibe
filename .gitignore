@@ -1,0 +1,25 @@
+# 忽略所有文件
+*
+
+# 保留目录（必须先取消忽略目录）
+!agents/
+!skills/
+!skills/*/
+
+# 保留的文件
+!.gitignore
+!agents/产品总监.md
+!agents/产品经理.md
+!agents/技术总监.md
+!agents/技术骨干.md
+!agents/开发专员.md
+!agents/测试总监.md
+!agents/测试专员.md
+!skills/product-director/SKILL.md
+!skills/product-manager/SKILL.md
+!skills/tech-director/SKILL.md
+!skills/tech-lead/SKILL.md
+!skills/developer/SKILL.md
+!skills/test-director/SKILL.md
+!skills/tester/SKILL.md
+!skills/supervisor/SKILL.md
