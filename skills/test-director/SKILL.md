@@ -125,16 +125,30 @@ description: 制定测试策略、审核测试用例、评估发布质量，通�
 
 # 调用其他 Agent
 
-测试总监 Agent 在执行任务时，如果需要调用其他 Agent（如测试专员等），使用统一的调用工具：
+测试总监 Agent 在执行任务时，如果需要调用其他 Agent（如测试专员等），使用统一的 agent-caller 工具（通过 MCP）：
 
-```bash
-bash skills/agent-caller/call-agent.sh <agent名称> <skill目录名> <任务描述> [超时时间(秒)]
+```javascript
+call_mcp_tool({
+  server: "rebebuca",
+  toolName: "start_agent_task",
+  arguments: {
+    command: `agent -p --force --output-format stream-json --stream-partial-output "/${skillDir} ${taskDesc}"`,
+    cwd: "<当前工作目录>"
+  }
+})
 ```
 
 **示例**：
-```bash
-# 调用测试专员编写测试用例
-bash skills/agent-caller/call-agent.sh "测试专员" "tester" "编写测试用例" 600
+```javascript
+// 调用测试专员编写测试用例
+call_mcp_tool({
+  server: "rebebuca",
+  toolName: "start_agent_task",
+  arguments: {
+    command: "agent -p --force --output-format stream-json --stream-partial-output \"/tester 编写测试用例\"",
+    cwd: "<当前工作目录>"
+  }
+})
 ```
 
 详细说明请参考 `skills/agent-caller/SKILL.md`。
@@ -143,4 +157,4 @@ bash skills/agent-caller/call-agent.sh "测试专员" "tester" "编写测试用�
 - 测试计划需覆盖主要场景
 - 质量报告需数据支撑
 - 发布建议需明确
-- 需要调用其他 Agent 时，使用统一的调用工具：`bash skills/agent-caller/call-agent.sh`
+- 需要调用其他 Agent 时，使用统一的 agent-caller 工具（通过 MCP）：`call_mcp_tool` 调用 rebebuca MCP 的 `start_agent_task` 方法

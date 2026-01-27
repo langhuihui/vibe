@@ -111,19 +111,40 @@ description: 设计技术架构、技术选型、审批技术方案，通过文�
 
 # 调用其他 Agent
 
-技术总监 Agent 在执行任务时，如果需要调用其他 Agent（如技术骨干、开发专员等），使用统一的调用工具：
+技术总监 Agent 在执行任务时，如果需要调用其他 Agent（如技术骨干、开发专员等），使用统一的 agent-caller 工具（通过 MCP）：
 
-```bash
-bash skills/agent-caller/call-agent.sh <agent名称> <skill目录名> <任务描述> [超时时间(秒)]
+```javascript
+call_mcp_tool({
+  server: "rebebuca",
+  toolName: "start_agent_task",
+  arguments: {
+    command: `agent -p --force --output-format stream-json --stream-partial-output "/${skillDir} ${taskDesc}"`,
+    cwd: "<当前工作目录>"
+  }
+})
 ```
 
 **示例**：
-```bash
-# 调用技术骨干进行详细设计
-bash skills/agent-caller/call-agent.sh "技术骨干" "tech-lead" "进行模块详细设计" 600
+```javascript
+// 调用技术骨干进行详细设计
+call_mcp_tool({
+  server: "rebebuca",
+  toolName: "start_agent_task",
+  arguments: {
+    command: "agent -p --force --output-format stream-json --stream-partial-output \"/tech-lead 进行模块详细设计\"",
+    cwd: "<当前工作目录>"
+  }
+})
 
-# 调用开发专员实现功能
-bash skills/agent-caller/call-agent.sh "开发专员" "developer" "实现功能代码" 1800
+// 调用开发专员实现功能
+call_mcp_tool({
+  server: "rebebuca",
+  toolName: "start_agent_task",
+  arguments: {
+    command: "agent -p --force --output-format stream-json --stream-partial-output \"/developer 实现功能代码\"",
+    cwd: "<当前工作目录>"
+  }
+})
 ```
 
 详细说明请参考 `skills/agent-caller/SKILL.md`。
@@ -132,4 +153,4 @@ bash skills/agent-caller/call-agent.sh "开发专员" "developer" "实现功能�
 - 技术方案需考虑可扩展性
 - 疑难问题决策需明确可执行
 - 代码规范更新需通知全员
-- 需要调用其他 Agent 时，使用统一的调用工具：`bash skills/agent-caller/call-agent.sh`
+- 需要调用其他 Agent 时，使用统一的 agent-caller 工具（通过 MCP）：`call_mcp_tool` 调用 rebebuca MCP 的 `start_agent_task` 方法

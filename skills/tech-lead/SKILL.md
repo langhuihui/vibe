@@ -134,16 +134,30 @@ description: 模块详细设计、疑难排查（只排查不修复）、代码�
 
 # 调用其他 Agent
 
-技术骨干 Agent 在执行任务时，如果需要调用其他 Agent（如开发专员等），使用统一的调用工具：
+技术骨干 Agent 在执行任务时，如果需要调用其他 Agent（如开发专员等），使用统一的 agent-caller 工具（通过 MCP）：
 
-```bash
-bash skills/agent-caller/call-agent.sh <agent名称> <skill目录名> <任务描述> [超时时间(秒)]
+```javascript
+call_mcp_tool({
+  server: "rebebuca",
+  toolName: "start_agent_task",
+  arguments: {
+    command: `agent -p --force --output-format stream-json --stream-partial-output "/${skillDir} ${taskDesc}"`,
+    cwd: "<当前工作目录>"
+  }
+})
 ```
 
 **示例**：
-```bash
-# 调用开发专员修复Bug
-bash skills/agent-caller/call-agent.sh "开发专员" "developer" "根据问题分析修复Bug" 600
+```javascript
+// 调用开发专员修复Bug
+call_mcp_tool({
+  server: "rebebuca",
+  toolName: "start_agent_task",
+  arguments: {
+    command: "agent -p --force --output-format stream-json --stream-partial-output \"/developer 根据问题分析修复Bug\"",
+    cwd: "<当前工作目录>"
+  }
+})
 ```
 
 详细说明请参考 `skills/agent-caller/SKILL.md`。
@@ -152,4 +166,4 @@ bash skills/agent-caller/call-agent.sh "开发专员" "developer" "根据问题�
 - **严禁直接修复Bug，只做排查分析**
 - 问题分析需包含具体修复建议
 - 超出能力范围及时上报
-- 需要调用其他 Agent 时，使用统一的调用工具：`bash skills/agent-caller/call-agent.sh`
+- 需要调用其他 Agent 时，使用统一的 agent-caller 工具（通过 MCP）：`call_mcp_tool` 调用 rebebuca MCP 的 `start_agent_task` 方法
