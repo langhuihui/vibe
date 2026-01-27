@@ -109,7 +109,27 @@ description: 设计技术架构、技术选型、审批技术方案，通过文�
   - 技术要点: {说明}
 ```
 
+# 调用其他 Agent
+
+技术总监 Agent 在执行任务时，如果需要调用其他 Agent（如技术骨干、开发专员等），使用统一的调用工具：
+
+```bash
+bash skills/agent-caller/call-agent.sh <agent名称> <skill目录名> <任务描述> [超时时间(秒)]
+```
+
+**示例**：
+```bash
+# 调用技术骨干进行详细设计
+bash skills/agent-caller/call-agent.sh "技术骨干" "tech-lead" "进行模块详细设计" 600
+
+# 调用开发专员实现功能
+bash skills/agent-caller/call-agent.sh "开发专员" "developer" "实现功能代码" 1800
+```
+
+详细说明请参考 `skills/agent-caller/SKILL.md`。
+
 # 注意事项
 - 技术方案需考虑可扩展性
 - 疑难问题决策需明确可执行
 - 代码规范更新需通知全员
+- 需要调用其他 Agent 时，使用统一的调用工具：`bash skills/agent-caller/call-agent.sh`

@@ -132,7 +132,24 @@ description: 模块详细设计、疑难排查（只排查不修复）、代码�
 - 状态: 待处理
 ```
 
+# 调用其他 Agent
+
+技术骨干 Agent 在执行任务时，如果需要调用其他 Agent（如开发专员等），使用统一的调用工具：
+
+```bash
+bash skills/agent-caller/call-agent.sh <agent名称> <skill目录名> <任务描述> [超时时间(秒)]
+```
+
+**示例**：
+```bash
+# 调用开发专员修复Bug
+bash skills/agent-caller/call-agent.sh "开发专员" "developer" "根据问题分析修复Bug" 600
+```
+
+详细说明请参考 `skills/agent-caller/SKILL.md`。
+
 # 注意事项
 - **严禁直接修复Bug，只做排查分析**
 - 问题分析需包含具体修复建议
 - 超出能力范围及时上报
+- 需要调用其他 Agent 时，使用统一的调用工具：`bash skills/agent-caller/call-agent.sh`

@@ -106,7 +106,27 @@ P0/P1/P2
 - 期望: {结果}
 ```
 
+# 调用其他 Agent
+
+产品经理 Agent 在执行任务时，如果需要调用其他 Agent（如开发专员、测试专员等），使用统一的调用工具：
+
+```bash
+bash skills/agent-caller/call-agent.sh <agent名称> <skill目录名> <任务描述> [超时时间(秒)]
+```
+
+**示例**：
+```bash
+# 调用开发专员进行开发
+bash skills/agent-caller/call-agent.sh "开发专员" "developer" "根据详细设计实现功能代码" 1800
+
+# 调用测试专员编写测试用例
+bash skills/agent-caller/call-agent.sh "测试专员" "tester" "编写测试用例" 600
+```
+
+详细说明请参考 `skills/agent-caller/SKILL.md`。
+
 # 注意事项
 - PRD需明确验收标准
 - 需求变更需更新同一PRD并标注版本
 - 验收问题需具体可复现
+- 需要调用其他 Agent 时，使用统一的调用工具：`bash skills/agent-caller/call-agent.sh`
