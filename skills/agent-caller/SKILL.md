@@ -7,6 +7,8 @@ description: 统一的 Agent 调用工具，供各角色 Agent 在执行任务�
 
 统一的 Agent 调用工具脚本，供各角色 Agent 在执行任务时使用，用于调用其他 Agent。
 
+本工具基于 CodeBuddy 无头模式（Headless Mode）实现，使用 `cbc` 命令以编程方式运行 CodeBuddy Code。
+
 ## 快速开始
 
 ### Linux/macOS
@@ -99,6 +101,8 @@ powershell -ExecutionPolicy Bypass -File skills\agent-caller\call-agent.ps1 "测
 2. **超时控制**: 支持设置超时时间，防止无限等待
 3. **日志保存**: 自动保存执行日志到 `.vibe/docs/agent_output_*.jsonl`
 4. **错误处理**: 完善的错误处理和日志记录
+5. **CodeBuddy 集成**: 基于 CodeBuddy 无头模式，使用 `cbc` 命令执行
+6. **非交互模式**: 自动使用 `-y` 参数跳过权限提示，适合自动化场景
 
 ## 输出说明
 
@@ -113,6 +117,8 @@ powershell -ExecutionPolicy Bypass -File skills\agent-caller\call-agent.ps1 "测
 2. **超时设置**: 根据任务复杂度合理设置超时时间
 3. **参数顺序**: 严格按照参数顺序传递，agent名称和skill目录名要匹配
 4. **路径**: 脚本路径相对于项目根目录，确保在正确的工作目录下执行
+5. **CodeBuddy 要求**: 需要安装 CodeBuddy CLI (`cbc` 或 `codebuddy` 命令)，且已配置好相关设置
+6. **权限模式**: 脚本自动使用 `-y` 参数跳过权限提示，适合自动化场景，仅在受信任的环境中使用
 
 ## 在各角色中的使用
 
@@ -153,3 +159,13 @@ powershell -ExecutionPolicy Bypass -File skills\agent-caller\call-agent.ps1 <目
    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
    .\skills\agent-caller\call-agent.ps1 ...
    ```
+
+## CodeBuddy 参考
+
+本工具基于 [CodeBuddy 无头模式](https://copilot.tencent.com/docs/cli/headless) 实现。主要使用的 CodeBuddy CLI 参数：
+
+- `-p` / `--print`: 非交互模式运行
+- `-y` / `--dangerously-skip-permissions`: 跳过权限提示（非交互模式必需）
+- `--output-format stream-json`: 流式 JSON 输出格式
+
+更多 CodeBuddy CLI 选项和功能，请参考 [CodeBuddy CLI 参考文档](https://copilot.tencent.com/docs/cli/headless)。

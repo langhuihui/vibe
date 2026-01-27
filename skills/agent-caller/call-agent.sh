@@ -62,7 +62,8 @@ call_agent() {
     log_info "开始流式执行 Agent..."
     
     # 使用流式 JSON 输出，逐行处理
-    timeout "${timeout}" agent -p --force --output-format stream-json --stream-partial-output "${full_task}" 2>&1 | \
+    # 使用 codebuddy (cbc) 命令，-y 参数在非交互模式下必需
+    timeout "${timeout}" cbc -p -y --output-format stream-json "${full_task}" 2>&1 | \
     while IFS= read -r line; do
         # 保存每一行到输出文件
         echo "${line}" >> "${output_file}"

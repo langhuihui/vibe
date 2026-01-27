@@ -82,9 +82,11 @@ function Call-Agent {
         $outputStream = [System.IO.StreamWriter]::new($outputFile, $false, [System.Text.Encoding]::UTF8)
         
         # 配置进程启动信息
+        # 使用 codebuddy (cbc) 命令，-y 参数在非交互模式下必需
         $psi = New-Object System.Diagnostics.ProcessStartInfo
-        $psi.FileName = "agent"
-        $psi.Arguments = "-p --force --output-format stream-json --stream-partial-output $fullTask"
+        $psi.FileName = "cbc"
+        # 使用引号包裹任务描述，确保包含空格的内容正确传递
+        $psi.Arguments = "-p -y --output-format stream-json `"$fullTask`""
         $psi.UseShellExecute = $false
         $psi.RedirectStandardOutput = $true
         $psi.RedirectStandardError = $true
