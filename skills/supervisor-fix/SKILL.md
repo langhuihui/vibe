@@ -1,6 +1,6 @@
 ---
 name: supervisor-fix
-description: 测试-修复对抗审查循环，协调测试agent验证功能，调用worker agent修复问题，循环直到所有测试通过
+description: 当需要自动化测试-修复闭环、持续验证直到通过时使用
 ---
 
 # 目的
