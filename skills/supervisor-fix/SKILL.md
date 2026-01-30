@@ -4,7 +4,7 @@ description: 当需要自动化测试-修复闭环、持续验证直到通过时
 ---
 
 # 目的
-作为测试-修复循环的自动化调度器，协调测试agent验证指定功能，当发现问题时调用worker agent进行修复，持续循环直到所有测试通过或达到最大重试次数。
+作为测试-修复循环的自动化调度器，协调测试agent验证指定功能，当发现问题时调用技术骨干分析根因后交由开发专员修复，持续循环直到所有测试通过或达到最大重试次数。
 
 **核心设计理念**：规范先行 + Agent 自修复 + 四重验证，防止 Agent "绕过" (Workaround) 问题而非真正解决。
 
@@ -17,7 +17,8 @@ description: 当需要自动化测试-修复闭环、持续验证直到通过时
 # 核心职责
 - **调度层**：控制流程，决定循环或退出（本 skill 的角色）
 - **检测层**：调度测试 agent 执行功能测试（静态 + 动态）
-- **修复层**：调度 worker agent 修复发现的问题
+- **根因分析层**：调度技术骨干进行系统性问题排查
+- **修复层**：调度开发专员按根因分析结果修复问题
 - 实施**四重验证**，确保修复有效
 - 检测 **Workaround 行为**，拒绝假修复
 - 发射状态变更事件，汇总最终结果
@@ -164,7 +165,7 @@ description: 当需要自动化测试-修复闭环、持续验证直到通过时
 ```markdown
 1. 标记为 DY-08 (Workaround模式)
 2. 严重级别: P0 (CRITICAL)
-3. 要求 Worker Agent 修复根因，而非绕过
+3. 要求开发专员修复根因，而非绕过
 4. 在报告中高亮显示 Workaround 行为
 ```
 
@@ -185,13 +186,13 @@ description: 当需要自动化测试-修复闭环、持续验证直到通过时
 - **修复建议**: {具体修复方向}
 ```
 
-# 工作流程
+# 工作流程（增强版：支持测试流程记录）
 
-## 主循环流程
+## 主循环流程（测试流程感知）
 
 ```
 输入：用户指定的测试目标（功能/模块/文件）
-输出：测试-修复循环结果报告（含四重验证结果）
+输出：测试-修复循环结果报告（含四重验证结果 + 流程记录）
 ```
 
 ```
@@ -200,66 +201,117 @@ description: 当需要自动化测试-修复闭环、持续验证直到通过时
        ▼
   1. 解析用户输入，确定测试目标
      状态: pending
-     初始化: iteration=0, issues=[], workarounds=[]
-             previousIssues=null (用于死循环检测)
+     初始化: iteration=0, issues=[], workarounds=[], rootCauseAnalysis=[]
+             previousIssues=null, testProcedure=null
        │
        ▼
-  ┌─── iteration < maxIter? ───┐
-  │                            │
- 是                           否
-  │                            │
-  ▼                            ▼
-2. iteration++            状态: max_iterations_reached
-   状态: static_checking  emit('loop:max_reached') → 结束
-   emit('loop:iteration')
+  2. 【新增】检查测试流程库
+     查询 .vibe/docs/测试流程库.md 中是否有该目标的记录
+     状态: procedure_lookup
+     emit('loop:procedure_lookup')
   │
-  ▼
-3. 阶段一：静态检测
-   调用测试Agent执行静态分析
-   emit('loop:static_check')
-  │
-  ▼
-  ┌─── 静态检测有P0问题? ───┐
-  │                         │
- 是                        否
-  │                         │
-  │                         ▼
-  │                    4. 阶段二：动态检测
-  │                       状态: testing
-  │                       调用测试Agent执行实际测试
-  │                       emit('loop:dynamic_check')
-  │                         │
-  │                         ▼
-  │                    5. 阶段三：四重验证
-  │                       状态: validating
-  │                       emit('loop:validate')
-  │                         │
-  │                         ▼
-  │                    ┌─── 四重验证全部通过? ───┐
-  │                    │                         │
-  │                   是                        否
-  │                    │                         │
-  │                    ▼                         ▼
-  │              状态: passed            6. 死循环检测
-  │              emit('loop:approved')      问题列表与上轮完全相同?
-  │              → 结束                       │
-  │                                    ┌──────┴──────┐
-  │                                   是            否
-  │                                    │             │
-  │                                    ▼             ▼
-  │                              状态: loop_detected  7. 修复阶段
-  │                              emit('loop:loop')      状态: fixing
-  │                              → 结束                 调用Worker
-  │                                                     emit('loop:fix')
-  │                                                       │
-  └───────────────────────────────────────────────────────┘
-                                                          │
-                                                          ▼
-                                                    返回步骤2
-                                                          │
-                                                          ▼
-                                                emit('loop:complete')
-                                                输出最终报告
+  ├─── 找到有效流程? ───┐
+  │                    │
+ 是                   否
+  │                    │
+  ▼                    ▼
+3. 使用记录的流程     4. 创建新流程记录
+   执行测试步骤         emit('loop:procedure_create')
+   emit('loop:procedure_use')  在测试流程库中创建草稿
+  │                    │
+  ▼                    ▼
+5. iteration++        5. iteration++
+   状态: root_cause_analysis 状态: root_cause_analysis
+   emit('loop:iteration')      emit('loop:iteration')
+  │                          │
+  ▼                          ▼
+6. 阶段零：根因分析        6. 阶段零：根因分析
+   调用技术骨干Agent          调用技术骨干Agent
+   emit('loop:root_cause_analysis')  emit('loop:root_cause_analysis')
+```
+
+## 测试流程管理子流程
+
+### 流程查找
+```
+函数: findTestProcedure(target)
+输入: 测试目标描述
+输出: 流程文档路径或null
+
+步骤:
+1. 标准化目标名称（小写，去除特殊字符）
+2. 在测试流程库中搜索匹配的功能名称
+3. 检查流程状态：
+   - ✅已验证: 直接使用
+   - 🔄待验证: 谨慎使用，记录疑虑
+   - ❌已失效: 跳过，创建新流程
+4. 返回找到的流程或null
+```
+
+### 流程创建
+```
+函数: createTestProcedure(target)
+输入: 测试目标描述
+输出: 新流程文档路径
+
+步骤:
+1. 生成唯一ID: proc-{timestamp}-{hash(target)}
+2. 创建流程文档:
+   ```markdown
+   ## {目标功能} - 测试流程
+   
+   **ID**: proc-{id}
+   **创建时间**: {current_time}
+   **状态**: 🔄待验证
+   **创建原因**: 首次测试此功能
+   
+   ### 初始假设
+   - 基于用户描述的预期测试方法
+   - 待实际验证后填充详细步骤
+   ```
+3. 在测试流程库中注册索引
+4. 返回文档路径
+```
+
+### 流程更新
+```
+函数: updateTestProcedure(procedureId, actualSteps, results)
+输入: 流程ID, 实际测试步骤, 结果反馈
+输出: 更新后的流程文档
+
+步骤:
+1. 读取原流程文档
+2. 更新内容:
+   - 测试步骤（实际有效的）
+   - 验证方法（确认可用的）
+   - 常见问题（发现的陷阱）
+   - 状态变更为 ✅已验证
+3. 添加优化历史记录
+4. 更新最后修改时间
+```
+
+## 完整主流程
+
+```
+开始 → 解析目标 → 查找流程
+  │              │
+  ├─找到流程─────→使用流程─→根因分析─→静态检测─→动态检测─→四重验证
+  │              │        │        │        │        │
+  └─未找到流程──→创建流程─┘        │        │        │
+                                   │        │        │
+                    ┌──────────────┘        │        │
+                    ▼                       │        │
+                  修复阶段←─────验证失败───────┘        │
+                    │                              │
+                    └───────────验证通过────────────┘
+                                   │
+                                   ▼
+                           【成功时】更新流程
+                           记录有效测试步骤
+                           emit('loop:procedure_updated')
+                                   │
+                                   ▼
+                               结束循环
 ```
 
 ## 状态事件
@@ -432,12 +484,12 @@ task({
 })
 ```
 
-## Worker Agent调用
+## 开发专员调用
 ```
 task({
-  subagent_name: "worker", 
-  description: "修复测试失败",
-  prompt: "修复以下测试失败：
+  subagent_name: "开发专员", 
+  description: "按根因分析修复测试失败",
+  prompt: "按技术骨干的根因分析修复以下测试失败：
 
 ## 失败测试列表
 {按严重级别排序的问题列表}
@@ -445,9 +497,12 @@ task({
 ## 问题详情
 {每个问题的完整信息}
 
+## 根因分析结果
+{技术骨干提供的根因分析和修复建议}
+
 ## 修复要求
-1. 按严重级别优先修复 P0 > P1 > P2 > P3
-2. **分析根因，不要只修表面症状**
+1. 严格按根因分析结果修复，不要自行发挥
+2. 按严重级别优先修复 P0 > P1 > P2 > P3
 3. 确保修复不破坏其他测试
 4. 对每个修复说明改动内容
 5. **严禁使用 Workaround 绕过问题**：
@@ -601,7 +656,7 @@ task({
    - 上报用户，等待决策
 ```
 
-## Worker Agent修复失败
+## 开发专员修复失败
 ```markdown
 1. 检查错误信息是否完整
 2. 补充上下文后重试
@@ -615,7 +670,7 @@ task({
 ```markdown
 1. 立即标记为 P0 问题
 2. 在下一轮修复中优先处理
-3. 明确告知 Worker Agent 不接受绕过
+3. 明确告知开发专员不接受绕过
 4. 如连续出现 Workaround，触发熔断
 ```
 
@@ -640,12 +695,12 @@ task({
 supervisor-fix 执行:
 1. emit('loop:start')
 2. 静态检测: 发现 IC-01 (配置缺失字段)
-3. 调用Worker修复静态问题
+3. 调用开发专员修复静态问题
 4. 动态测试: 发现 2 个失败
    - ISSUE-1 [P1] 空密码未校验
    - ISSUE-2 [P2] 错误提示不准确
 5. 四重验证: Issues未清零, Workarounds=0
-6. 调用Worker修复动态问题
+6. 调用开发专员修复动态问题
 7. 再次四重验证: 全部通过
 8. emit('loop:approved')
 9. emit('loop:complete')
@@ -657,11 +712,11 @@ supervisor-fix 执行:
 
 supervisor-fix 执行:
 1. 第1轮: 动态测试失败 (脚本崩溃)
-2. 调用Worker修复
+2. 调用开发专员修复
 3. 第2轮: 动态测试"通过"，但四重验证发现:
    - Output: 文件存在但内容为空 ❌
    - Workaround: 检测到 Agent 创建了空文件 ❌
-4. 标记 DY-08，要求Worker修复根因
+4. 标记 DY-08，要求开发专员修复根因
 5. 第3轮: 四重验证全部通过 ✅
 ```
 
@@ -671,7 +726,7 @@ supervisor-fix 执行:
 
 supervisor-fix 执行:
 1. 第1轮: 发现 ISSUE-1 [P1] 类型不兼容
-2. Worker修复: 添加类型转换
+2. 开发专员修复: 添加类型转换
 3. 第2轮: 仍然是 ISSUE-1 [P1] 类型不兼容
 4. 问题列表与上轮完全相同 → 死循环检测触发
 5. emit('loop:loop_detected')
