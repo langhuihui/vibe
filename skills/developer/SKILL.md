@@ -166,9 +166,54 @@ description: 当需要实现功能、修复Bug、编写单元测试时使用
 - [ ] 新增回归测试（如适用）
 - [ ] 没有破坏其他功能
 
+# 命令执行规范（关键）
+
+## 阻塞风险警告 ⚠️
+
+**以下命令可能导致系统无限等待：**
+- 开发服务器：`npm run dev`, `cargo run`, `go run main.go`
+- 构建监听：`tsc --watch`, `webpack --watch`
+- 长时间构建：首次 `cargo build`, 大型 `npm install`
+
+## 必须遵循的规则
+
+### 1. 执行前检测操作系统
+```bash
+OS_TYPE=$(uname -s 2>/dev/null || echo "Windows")
+```
+
+### 2. 构建命令带超时
+```bash
+timeout 600 npm run build  # 10分钟超时
+timeout 900 cargo build    # 15分钟超时
+```
+
+### 3. 开发服务器后台启动
+```bash
+nohup npm run dev > /tmp/dev.log 2>&1 &
+echo $! > /tmp/dev.pid
+sleep 3
+if curl -s http://localhost:3000 > /dev/null; then
+    echo "服务启动成功"
+else
+    echo "启动失败" && cat /tmp/dev.log
+fi
+```
+
+### 4. 清理后台进程
+```bash
+# 完成后务必清理
+kill $(cat /tmp/dev.pid) 2>/dev/null
+```
+
+**详细规范请参考 `skills/command-executor/SKILL.md`**
+
 # 注意事项
 - 遇难题先尝试3种以上方法，无法解决再求助
 - **按技术骨干分析建议修复，不要自行发挥，严禁猜测修复**
 - 修复后必须通知测试验证
 - **严禁使用 Workaround 绕过问题**
 - **同一Bug修复3次仍失败，必须上报质疑架构**
+- **执行命令前必须检测操作系统类型**
+- **长时间命令必须带超时，防止无限等待**
+- **服务器类命令必须后台启动**

@@ -41,6 +41,8 @@ description: 当需要编写PRD、跟进开发进度、进行产品验收时使�
 | 验收报告 | `.vibe/docs/验收报告.md` | 追加模式 |
 
 ## PRD模板
+结构见 `skills/templates/通用模板.md` 之「计划/任务列表通用结构」（目标与任务列表）。必填：
+
 ```markdown
 # {功能名称}
 

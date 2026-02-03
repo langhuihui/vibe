@@ -43,6 +43,8 @@ description: 当需要制定测试计划、审核测试用例、评估发布质�
 | 用例审核 | `.vibe/docs/reviews/用例审核-{功能名}.md` | 审核意见 |
 
 ## 测试计划模板
+结构见 `skills/templates/通用模板.md` 之「计划/任务列表通用结构」。必填：
+
 ```markdown
 # {版本}测试计划
 
@@ -113,7 +115,8 @@ description: 当需要制定测试计划、审核测试用例、评估发布质�
 ```
 
 ## 发布质量报告
-`.vibe/docs/质量报告.md`:
+`.vibe/docs/质量报告.md`：结构见 `skills/templates/通用模板.md` 之「版本化报告」。必填：
+
 ```markdown
 ## 质量报告 - {版本号}
 - 通过率: {%}

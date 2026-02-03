@@ -43,6 +43,77 @@ description: 当需要自动化测试-修复闭环、持续验证直到通过时
 | enableStaticCheck | true | 是否启用静态检测前置 |
 | enableWorkaroundDetection | true | 是否启用 Workaround 检测 |
 
+# 命令执行规范（关键！防止系统中断）
+
+## 操作系统检测（必须首先执行）
+
+**每次开始测试-修复循环前，必须检测操作系统：**
+
+```bash
+OS_TYPE=$(uname -s 2>/dev/null || echo "Windows")
+echo "当前操作系统: $OS_TYPE"
+```
+
+并将检测结果传递给测试Agent和开发专员，确保命令兼容性。
+
+## 阻塞风险管理 ⚠️
+
+**以下情况可能导致整个体系无限等待，必须防范：**
+
+| 阻塞场景 | 说明 | 处理策略 |
+|----------|------|----------|
+| 服务器启动 | `npm run dev`, `cargo run` | 必须后台启动 |
+| 监听模式 | `npm test --watch` | 禁止使用，改用单次运行 |
+| 长时间测试 | `cargo test` | 必须带超时 |
+| 交互式命令 | 等待用户输入 | 使用非交互参数 |
+
+### 测试命令安全模板
+
+```bash
+# macOS/Linux - 测试必须带超时
+timeout ${testTimeout} npm test 2>&1 | tee test-output.log
+EXIT_CODE=${PIPESTATUS[0]}
+
+if [ $EXIT_CODE -eq 124 ]; then
+    echo "[TIMEOUT] 测试超时"
+    # 触发超时错误处理
+fi
+```
+
+### 需要服务器的测试流程
+
+```bash
+# 1. 后台启动服务器
+nohup npm run dev > /tmp/server.log 2>&1 &
+SERVER_PID=$!
+
+# 2. 等待服务就绪（最多30秒）
+for i in {1..30}; do
+    curl -s http://localhost:3000 > /dev/null && break
+    sleep 1
+done
+
+# 3. 执行测试（带超时）
+timeout ${testTimeout} npm test
+
+# 4. 清理服务器（必须）
+kill $SERVER_PID 2>/dev/null
+```
+
+### 阻塞导致的熔断触发
+
+```
+IF 测试命令超时 THEN
+    重试1次
+    IF 仍然超时 THEN
+        emit('loop:error', {type: 'command_timeout'})
+        关闭循环，上报用户
+    END IF
+END IF
+```
+
+**详细规范请参考 `skills/command-executor/SKILL.md`**
+
 # 状态定义
 
 | 状态 | 含义 | 后续动作 |
@@ -663,6 +734,8 @@ supervisor-fix 执行:
 每次测试-修复循环结束（无论成功或失败）时，必须进行复盘。
 
 ## 复盘内容
+结构见 `skills/templates/通用模板.md` 之「复盘报告通用结构」。必填内容如下：
+
 ```markdown
 ## supervisor-fix 复盘报告
 
@@ -748,5 +821,5 @@ supervisor-fix 执行:
 - **必须执行四重验证，不能只看测试是否通过**
 - **严格检测 Workaround 行为，拒绝假修复**
 - **实施死循环检测，避免无效重复**
-- **参考错误处理规范 skill 处理各类异常**
+- **参考 command-executor skill（含错误处理规范）处理各类异常**
 - **每次循环结束必须复盘，提出改进建议**

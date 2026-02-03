@@ -122,7 +122,8 @@ description: 当需要编写测试用例、执行测试、提交Bug、验证修�
 ```
 
 ## 提交测试报告
-`.vibe/docs/测试报告.md`:
+`.vibe/docs/测试报告.md`：结构见 `skills/templates/通用模板.md` 之「版本化报告」。必填：
+
 ```markdown
 ## 测试报告 - {版本号}
 - 用例: {总数}
@@ -179,8 +180,71 @@ description: 当需要编写测试用例、执行测试、提交Bug、验证修�
 
 **STOP。测试必须严谨，证据必须完整。**
 
+# 命令执行规范（关键）
+
+## 阻塞风险警告 ⚠️
+
+**以下命令可能导致系统无限等待：**
+- 测试监听模式：`npm test --watch`, `jest --watch`, `cargo watch`
+- 某些测试框架可能等待输入或持续运行
+- 服务依赖测试需要先启动服务
+
+## 必须遵循的规则
+
+### 1. 执行测试前检测操作系统
+```bash
+# 必须首先执行
+OS_TYPE=$(uname -s 2>/dev/null || echo "Windows")
+echo "操作系统: $OS_TYPE"
+```
+
+### 2. 测试命令必须带超时
+```bash
+# macOS/Linux
+timeout 300 npm test  # 5分钟超时
+
+# 或使用 gtimeout (macOS)
+gtimeout 300 npm test
+```
+
+### 3. 需要服务器的测试流程
+```bash
+# 1. 后台启动服务器
+nohup npm run dev > /tmp/server.log 2>&1 &
+SERVER_PID=$!
+
+# 2. 等待服务就绪
+for i in {1..30}; do
+    curl -s http://localhost:3000 > /dev/null && break
+    sleep 1
+done
+
+# 3. 执行测试（带超时）
+timeout 300 npm test
+
+# 4. 清理服务器
+kill $SERVER_PID 2>/dev/null
+```
+
+### 4. 端口检查（跨平台）
+```bash
+# macOS
+lsof -i :3000
+
+# Linux  
+ss -tlnp | grep :3000
+
+# Windows
+netstat -ano | findstr :3000
+```
+
+**详细规范请参考 `skills/command-executor/SKILL.md`**
+
 # 注意事项
 - Bug需可复现，步骤清晰
 - 测试报告需数据完整
 - 验证失败需重新打开Bug
 - **所有结论必须有证据支持**
+- **执行命令前必须检测操作系统类型**
+- **测试命令必须带超时，防止无限等待**
+- **需要服务的测试必须先后台启动服务**
