@@ -6,7 +6,7 @@ description: 当需要自动化测试-修复闭环、持续验证直到通过时
 # 目的
 作为测试-修复循环的自动化调度器，协调测试agent验证指定功能，当发现问题时调用技术骨干分析根因后交由开发专员修复，持续循环直到所有测试通过或达到最大重试次数。
 
-**核心设计理念**：规范先行 + Agent 自修复 + 四重验证，防止 Agent "绕过" (Workaround) 问题而非真正解决。
+> 核心原则遵循 `skills/shared/PRINCIPLES.md`。规范先行 + Agent 自修复 + 四重验证，防止 Agent “绕过”问题。
 
 # 适用场景
 - 用户要求测试某个特定功能并自动修复问题
@@ -43,76 +43,9 @@ description: 当需要自动化测试-修复闭环、持续验证直到通过时
 | enableStaticCheck | true | 是否启用静态检测前置 |
 | enableWorkaroundDetection | true | 是否启用 Workaround 检测 |
 
-# 命令执行规范（关键！防止系统中断）
+# 命令执行规范
 
-## 操作系统检测（必须首先执行）
-
-**每次开始测试-修复循环前，必须检测操作系统：**
-
-```bash
-OS_TYPE=$(uname -s 2>/dev/null || echo "Windows")
-echo "当前操作系统: $OS_TYPE"
-```
-
-并将检测结果传递给测试Agent和开发专员，确保命令兼容性。
-
-## 阻塞风险管理 ⚠️
-
-**以下情况可能导致整个体系无限等待，必须防范：**
-
-| 阻塞场景 | 说明 | 处理策略 |
-|----------|------|----------|
-| 服务器启动 | `npm run dev`, `cargo run` | 必须后台启动 |
-| 监听模式 | `npm test --watch` | 禁止使用，改用单次运行 |
-| 长时间测试 | `cargo test` | 必须带超时 |
-| 交互式命令 | 等待用户输入 | 使用非交互参数 |
-
-### 测试命令安全模板
-
-```bash
-# macOS/Linux - 测试必须带超时
-timeout ${testTimeout} npm test 2>&1 | tee test-output.log
-EXIT_CODE=${PIPESTATUS[0]}
-
-if [ $EXIT_CODE -eq 124 ]; then
-    echo "[TIMEOUT] 测试超时"
-    # 触发超时错误处理
-fi
-```
-
-### 需要服务器的测试流程
-
-```bash
-# 1. 后台启动服务器
-nohup npm run dev > /tmp/server.log 2>&1 &
-SERVER_PID=$!
-
-# 2. 等待服务就绪（最多30秒）
-for i in {1..30}; do
-    curl -s http://localhost:3000 > /dev/null && break
-    sleep 1
-done
-
-# 3. 执行测试（带超时）
-timeout ${testTimeout} npm test
-
-# 4. 清理服务器（必须）
-kill $SERVER_PID 2>/dev/null
-```
-
-### 阻塞导致的熔断触发
-
-```
-IF 测试命令超时 THEN
-    重试1次
-    IF 仍然超时 THEN
-        emit('loop:error', {type: 'command_timeout'})
-        关闭循环，上报用户
-    END IF
-END IF
-```
-
-**详细规范请参考 `skills/command-executor/SKILL.md`**
+> 遵循 `skills/command-executor/SKILL.md`。循环开始前检测 OS，测试命令带 timeout，服务器后台启动，禁止 --watch。命令超时重试1次，仍超时则触发熔断上报用户。
 
 # 状态定义
 
@@ -420,7 +353,7 @@ END IF
 ## 静态检测Agent调用
 ```
 task({
-  subagent_name: "测试",
+  subagent_name: "测试专员",
   description: "执行静态检测",
   prompt: "对以下目标执行静态检测：{测试目标}
   
@@ -446,7 +379,7 @@ task({
 ## 动态测试Agent调用
 ```
 task({
-  subagent_name: "测试",
+  subagent_name: "测试专员",
   description: "执行动态测试",
   prompt: "执行以下测试并返回详细结果：{测试目标}
   

@@ -79,7 +79,7 @@ P0/P1/P2
 1. 阅读产品规划
 2. 分析需求
 3. 编写PRD
-4. 在 `.vibe/docs/待审批.md` 提交审批
+4. 在 `.vibe/docs/进度总览.md` 提交审批
 
 ## 流程2：产品验收
 ```
@@ -94,7 +94,7 @@ P0/P1/P2
 # 协作接口
 
 ## 提交PRD审批
-`.vibe/docs/待审批.md`:
+`.vibe/docs/进度总览.md`（审批区）:
 ```markdown
 - [ ] PRD审批: .vibe/docs/prd/{功能}.md
 ```

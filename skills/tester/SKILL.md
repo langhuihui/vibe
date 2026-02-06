@@ -6,11 +6,30 @@ description: 当需要编写测试用例、执行测试、提交Bug、验证修�
 # 目的
 编写测试用例，执行功能测试和回归测试，提交和跟踪Bug，验证修复结果。
 
-**核心原则：证据优先于声明（Evidence before claims）**
+> 核心原则遵循 `skills/shared/PRINCIPLES.md`
 
-> 任何测试结论必须有具体的证据支持。禁止"看起来"、"应该"等模糊表述。
->
-> **铁律：NO CLAIMS WITHOUT VERIFICATION EVIDENCE**
+# 模式说明
+
+## 完整模式（默认）
+编写用例、执行测试、提交Bug、验证修复，输出完整测试报告。
+
+## 快速执行模式（supervisor-fix 调用时使用）
+仅执行指定的测试命令并返回结构化结果，不编写用例、不提交Bug。返回格式：
+```markdown
+## 测试摘要
+- **执行命令**: {command}
+- **总测试数**: {total}
+- **通过**: {passed}
+- **失败**: {failed}
+- **跳过**: {skipped}
+- **执行时间**: {duration}
+
+## 失败详情（如有）
+### 失败测试 1
+- **测试名称**: {name}
+- **文件位置**: {file:line}
+- **错误信息**: {error}
+```
 
 # 适用场景
 - 需要编写测试用例
@@ -38,8 +57,8 @@ description: 当需要编写测试用例、执行测试、提交Bug、验证修�
 |------|------|------|
 | PRD | `.vibe/docs/prd/*.md` | 编写用例依据 |
 | 测试计划 | `.vibe/docs/测试计划.md` | 范围和优先级 |
-| 测试任务 | `.vibe/docs/测试任务.md` | 待办事项 |
-| 待验证 | `.vibe/docs/待验证.md` | 需验证Bug |
+| 进度总览 | `.vibe/docs/进度总览.md` | 待办任务 |
+| 问题跟踪 | `.vibe/docs/问题跟踪.md` | Bug全生命周期、待验证项 |
 
 ## 输出的文档
 | 文档 | 路径 | 说明 |
@@ -103,7 +122,7 @@ description: 当需要编写测试用例、执行测试、提交Bug、验证修�
 
 ## 流程3：Bug验证
 ```
-输入：.vibe/docs/待验证.md
+输入：.vibe/docs/问题跟踪.md（待验证条目）
 输出：更新问题跟踪状态
 ```
 1. 阅读待验证列表
@@ -180,71 +199,10 @@ description: 当需要编写测试用例、执行测试、提交Bug、验证修�
 
 **STOP。测试必须严谨，证据必须完整。**
 
-# 命令执行规范（关键）
-
-## 阻塞风险警告 ⚠️
-
-**以下命令可能导致系统无限等待：**
-- 测试监听模式：`npm test --watch`, `jest --watch`, `cargo watch`
-- 某些测试框架可能等待输入或持续运行
-- 服务依赖测试需要先启动服务
-
-## 必须遵循的规则
-
-### 1. 执行测试前检测操作系统
-```bash
-# 必须首先执行
-OS_TYPE=$(uname -s 2>/dev/null || echo "Windows")
-echo "操作系统: $OS_TYPE"
-```
-
-### 2. 测试命令必须带超时
-```bash
-# macOS/Linux
-timeout 300 npm test  # 5分钟超时
-
-# 或使用 gtimeout (macOS)
-gtimeout 300 npm test
-```
-
-### 3. 需要服务器的测试流程
-```bash
-# 1. 后台启动服务器
-nohup npm run dev > /tmp/server.log 2>&1 &
-SERVER_PID=$!
-
-# 2. 等待服务就绪
-for i in {1..30}; do
-    curl -s http://localhost:3000 > /dev/null && break
-    sleep 1
-done
-
-# 3. 执行测试（带超时）
-timeout 300 npm test
-
-# 4. 清理服务器
-kill $SERVER_PID 2>/dev/null
-```
-
-### 4. 端口检查（跨平台）
-```bash
-# macOS
-lsof -i :3000
-
-# Linux  
-ss -tlnp | grep :3000
-
-# Windows
-netstat -ano | findstr :3000
-```
-
-**详细规范请参考 `skills/command-executor/SKILL.md`**
-
 # 注意事项
 - Bug需可复现，步骤清晰
 - 测试报告需数据完整
 - 验证失败需重新打开Bug
 - **所有结论必须有证据支持**
-- **执行命令前必须检测操作系统类型**
-- **测试命令必须带超时，防止无限等待**
-- **需要服务的测试必须先后台启动服务**
+- **核心原则遵循 `skills/shared/PRINCIPLES.md`**
+- **命令执行遵循 `skills/command-executor/SKILL.md`**
