@@ -27,3 +27,6 @@
 !skills/supervisor/SKILL.md
 !skills/command-executor/SKILL.md
 !skills/supervisor-fix/SKILL.md
+!skills/checklists/*
+!skills/shared/*
+!skills/templates/*
