@@ -5,6 +5,7 @@
 !agents/
 !skills/
 !skills/*/
+!docs/
 
 # 保留的文件
 !.gitignore
@@ -30,4 +31,5 @@
 !skills/checklists/*
 !skills/shared/*
 !skills/templates/*
+!docs/*.md
 !README.md
